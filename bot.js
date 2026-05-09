@@ -2,8 +2,8 @@ const { Client, LocalAuth } = require("whatsapp-web.js");
 const OpenAI = require("openai");
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-const GROQ_API_KEY     = "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";
-const DEEPSEEK_API_KEY = "sk-65ade0ea4be943acaf4531f8169b14e9";
+const GROQ_API_KEY_1   = "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";
+const GROQ_API_KEY_2   = "YOUR_SECOND_GROQ_API_KEY_HERE"; // ← 2nd Groq key මෙතන දාන්න
 const OWNER_NUMBER     = "94785222067";
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -42,18 +42,17 @@ Please reply in English in a friendly, helpful, and natural manner.`;
 }
 // ──────────────────────────────────────────────────────────────────────────────
 
-const groq = new OpenAI({
+const groq1 = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
-  apiKey: GROQ_API_KEY,
+  apiKey: GROQ_API_KEY_1,
 });
 
-const deepseek = new OpenAI({
-  baseURL: "https://api.deepseek.com/v1",
-  apiKey: DEEPSEEK_API_KEY,
+const groq2 = new OpenAI({
+  baseURL: "https://api.groq.com/openai/v1",
+  apiKey: GROQ_API_KEY_2,
 });
 
-const GROQ_MODEL     = "groq/compound-mini";
-const DEEPSEEK_MODEL = "deepseek-v4-flash";
+const GROQ_MODEL = "compound-beta-mini";
 
 const enabledPrivateChats = new Set();
 const enabledGroupChats   = new Set();
@@ -87,34 +86,34 @@ async function getAIReply(chatId, userMessage) {
 
   let reply;
 
-  // ── Primary: Groq ──────────────────────────────────────────────────────────
+  // ── Primary: Groq Key 1 ────────────────────────────────────────────────────
   try {
-    const response = await groq.chat.completions.create({
+    const response = await groq1.chat.completions.create({
       model: GROQ_MODEL,
       messages,
       max_tokens: 1024,
     });
     reply = response.choices[0].message.content;
-    console.log("✅ Groq reply");
-  } catch (groqErr) {
-    if (!isRateLimitError(groqErr)) {
-      console.error("❌ Groq error:", groqErr.message);
-      throw groqErr;
+    console.log("✅ Groq Key 1 reply");
+  } catch (groqErr1) {
+    if (!isRateLimitError(groqErr1)) {
+      console.error("❌ Groq Key 1 error:", groqErr1.message);
+      throw groqErr1;
     }
 
-    // ── Fallback: DeepSeek ─────────────────────────────────────────────────
-    console.warn("⚠️ Groq rate limit - trying DeepSeek...");
+    // ── Fallback: Groq Key 2 ───────────────────────────────────────────────
+    console.warn("⚠️ Groq Key 1 rate limit - trying Groq Key 2...");
     try {
-      const dsResponse = await deepseek.chat.completions.create({
-        model: DEEPSEEK_MODEL,
+      const response2 = await groq2.chat.completions.create({
+        model: GROQ_MODEL,
         messages,
         max_tokens: 1024,
       });
-      reply = dsResponse.choices[0].message.content;
-      console.log("✅ DeepSeek fallback reply");
-    } catch (dsErr) {
-      console.error("❌ DeepSeek error:", dsErr.message);
-      throw new Error("දෙකම fail වුණා: " + dsErr.message);
+      reply = response2.choices[0].message.content;
+      console.log("✅ Groq Key 2 fallback reply");
+    } catch (groqErr2) {
+      console.error("❌ Groq Key 2 error:", groqErr2.message);
+      throw new Error("Groq keys දෙකම fail වුණා: " + groqErr2.message);
     }
   }
 
@@ -150,7 +149,7 @@ client.on("qr", async () => {
 client.on("ready", () => {
   console.log("✅ Bot active! Sachintha Lakshan's AI Assistant ready.");
   console.log(`👤 Owner: ${OWNER_NUMBER}`);
-  console.log(`🤖 Primary: ${GROQ_MODEL} | Fallback: ${DEEPSEEK_MODEL}`);
+  console.log(`🤖 Model: ${GROQ_MODEL} (Key 1 → Key 2 fallback)`);
   console.log(`🌐 Default language: ${currentLanguage}`);
   console.log("📌 Default: සියලු chats disabled. /allow හෝ /allowgroup use කරන්න.\n");
 });
@@ -232,8 +231,8 @@ client.on("message_create", async (msg) => {
         const langLabel = currentLanguage === "sinhala" ? "🇱🇰 සිංහල" : "🇬🇧 English";
         const status =
           `*🤖 Bot Status*\n\n` +
-          `🟡 Primary: ${GROQ_MODEL}\n` +
-          `🟠 Fallback: ${DEEPSEEK_MODEL}\n` +
+          `🟡 Model: ${GROQ_MODEL}\n` +
+          `🔑 Key 1 → Key 2 fallback\n` +
           `🌐 Language: ${langLabel}\n\n` +
           `✅ Private chats enabled: ${enabledPrivateChats.size}\n` +
           `✅ Groups enabled: ${enabledGroupChats.size}\n\n` +
