@@ -48,12 +48,12 @@ const groq = new OpenAI({
 });
 
 const deepseek = new OpenAI({
-  baseURL: "https://api.deepseek.com/v1",
+  baseURL: "https://api.deepseek.com",
   apiKey: DEEPSEEK_API_KEY,
 });
 
 const GROQ_MODEL     = "llama-3.3-70b-versatile";
-const DEEPSEEK_MODEL = "deepseek-v4-flash";
+const DEEPSEEK_MODEL = "deepseek-chat";
 
 const enabledPrivateChats = new Set();
 const enabledGroupChats   = new Set();
