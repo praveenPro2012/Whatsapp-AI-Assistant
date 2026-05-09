@@ -1,5 +1,5 @@
 {
-  "name": "whatsapp-deepseek-bot",
+  "name": "whatsapp-AI-Assistant",
   "version": "1.0.0",
   "description": "Sachintha Lakshan's WhatsApp AI Bot powered by Gemini & Groq",
   "main": "bot.js",
