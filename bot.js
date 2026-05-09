@@ -2,9 +2,9 @@ const { Client, LocalAuth } = require("whatsapp-web.js");
 const OpenAI = require("openai");
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-const GEMINI_API_KEY  = "AIzaSyB4n7wg1stQX4EZqY6k0q0RTPTho_pFnNU"; // ← Gemini API key
-const GROQ_API_KEY    = "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"; // ← Groq API key
-const OWNER_NUMBER    = "94785222067"; // ← ඔයාගේ number (country code සහිතව, + නැතුව)
+const GROQ_API_KEY     = "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";
+const DEEPSEEK_API_KEY = "sk-65ade0ea4be943acaf4531f8169b14e9"; // ← DeepSeek API key දාන්න
+const OWNER_NUMBER     = "94785222067";
 
 const BOT_PERSONA = `You are a helpful AI assistant representing Sachintha Lakshan.
 You speak on behalf of Sachintha Lakshan when he is unavailable.
@@ -13,26 +13,21 @@ If asked who you are, say you are Sachintha Lakshan's AI assistant.
 Reply in the same language the user messages you in.`;
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Gemini - OpenAI-compatible endpoint use කරනවා
-const gemini = new OpenAI({
-  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-  apiKey: GEMINI_API_KEY,
-});
-
-// Groq - OpenAI-compatible
 const groq = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
   apiKey: GROQ_API_KEY,
 });
 
-const GEMINI_MODEL = "gemini-2.0-flash";
-const GROQ_MODEL   = "llama-3.3-70b-versatile"; // Sinhala support ඇති model
+const deepseek = new OpenAI({
+  baseURL: "https://api.deepseek.com/v1",
+  apiKey: DEEPSEEK_API_KEY,
+});
 
-// enabled chats store කරන්නේ Set දෙකක් - private සහ group වෙනම
+const GROQ_MODEL     = "llama-3.3-70b-versatile";
+const DEEPSEEK_MODEL = "deepseek-chat";
+
 const enabledPrivateChats = new Set();
 const enabledGroupChats   = new Set();
-
-// per-chat conversation history (OpenAI format)
 const chatHistories = {};
 
 function isOwner(senderId) {
@@ -44,52 +39,53 @@ function getChatHistory(chatId) {
   return chatHistories[chatId];
 }
 
+function isRateLimitError(err) {
+  return (
+    err?.status === 429 ||
+    err?.message?.toLowerCase().includes("rate") ||
+    err?.message?.toLowerCase().includes("quota") ||
+    err?.message?.toLowerCase().includes("limit")
+  );
+}
+
 async function getAIReply(chatId, userMessage) {
   const history = getChatHistory(chatId);
 
   history.push({ role: "user", content: userMessage });
-
-  // History 20 messages වලට limit (memory save)
   if (history.length > 20) history.splice(0, history.length - 20);
 
   const messages = [{ role: "system", content: BOT_PERSONA }, ...history];
 
   let reply;
 
-  // ── Primary: Gemini 2.5 Flash ──────────────────────────────────────────────
+  // ── Primary: Groq ──────────────────────────────────────────────────────────
   try {
-    const response = await gemini.chat.completions.create({
-      model: GEMINI_MODEL,
+    const response = await groq.chat.completions.create({
+      model: GROQ_MODEL,
       messages,
       max_tokens: 1024,
     });
     reply = response.choices[0].message.content;
-    console.log("✅ Gemini reply");
-  } catch (err) {
-    const isRateLimit =
-      err?.status === 429 ||
-      err?.message?.toLowerCase().includes("rate") ||
-      err?.message?.toLowerCase().includes("quota") ||
-      err?.message?.toLowerCase().includes("limit");
+    console.log("✅ Groq reply");
+  } catch (groqErr) {
+    if (!isRateLimitError(groqErr)) {
+      console.error("❌ Groq error:", groqErr.message);
+      throw groqErr;
+    }
 
-    if (isRateLimit) {
-      // ── Fallback: Groq ───────────────────────────────────────────────────
-      console.warn("⚠️ Gemini rate limit hit - Groq fallback...");
-      try {
-        const groqResponse = await groq.chat.completions.create({
-          model: GROQ_MODEL,
-          messages,
-          max_tokens: 1024,
-        });
-        reply = groqResponse.choices[0].message.content;
-        console.log("✅ Groq fallback reply");
-      } catch (groqErr) {
-        console.error("❌ Groq error:", groqErr.message);
-        throw new Error("දෙකම fail වුණා: " + groqErr.message);
-      }
-    } else {
-      console.error("❌ Gemini error:", err.message);
-      throw err;
+    // ── Fallback: DeepSeek ─────────────────────────────────────────────────
+    console.warn("⚠️ Groq rate limit - trying DeepSeek...");
+    try {
+      const dsResponse = await deepseek.chat.completions.create({
+        model: DEEPSEEK_MODEL,
+        messages,
+        max_tokens: 1024,
+      });
+      reply = dsResponse.choices[0].message.content;
+      console.log("✅ DeepSeek fallback reply");
+    } catch (dsErr) {
+      console.error("❌ DeepSeek error:", dsErr.message);
+      throw new Error("දෙකම fail වුණා: " + dsErr.message);
     }
   }
 
@@ -123,22 +119,27 @@ client.on("qr", async () => {
 client.on("ready", () => {
   console.log("✅ Bot active! Sachintha Lakshan's AI Assistant ready.");
   console.log(`👤 Owner: ${OWNER_NUMBER}`);
-  console.log(`🤖 Primary: ${GEMINI_MODEL} | Fallback: ${GROQ_MODEL}`);
+  console.log(`🤖 Primary: ${GROQ_MODEL} | Fallback: ${DEEPSEEK_MODEL}`);
   console.log("📌 Default: සියලු chats disabled. /allow හෝ /allowgroup use කරන්න.\n");
 });
 
 client.on("message_create", async (msg) => {
   try {
+    const text = msg.body?.trim();
+    if (!text) return;
+
+    const isCommand = text.startsWith("/");
+
+    // Bot එකේම AI replies ignore කරනවා, commands pass කරනවා
+    if (msg.fromMe && !isCommand) return;
+
     const chat     = await msg.getChat();
     const senderId = msg.from;
     const chatId   = chat.id._serialized;
     const isGroup  = chat.isGroup;
-    const text     = msg.body?.trim();
 
-    if (!text) return;
-
-    // ─── COMMANDS ────────────────────────────────────────────────────────────
-    if (text.startsWith("/")) {
+    // ─── COMMANDS ─────────────────────────────────────────────────────────────
+    if (isCommand) {
       const command = text.split(" ")[0].toLowerCase();
 
       if (command === "/allowgroup") {
@@ -185,8 +186,8 @@ client.on("message_create", async (msg) => {
         if (!isOwner(senderId)) return;
         const status =
           `*🤖 Bot Status*\n\n` +
-          `🔵 Primary: ${GEMINI_MODEL}\n` +
-          `🟡 Fallback: ${GROQ_MODEL}\n\n` +
+          `🟡 Primary: ${GROQ_MODEL}\n` +
+          `🟠 Fallback: ${DEEPSEEK_MODEL}\n\n` +
           `✅ Private chats enabled: ${enabledPrivateChats.size}\n` +
           `✅ Groups enabled: ${enabledGroupChats.size}\n\n` +
           `*Enabled Private Chats:*\n${enabledPrivateChats.size > 0 ? [...enabledPrivateChats].join("\n") : "කිසිවක් නෑ"}\n\n` +
@@ -217,12 +218,13 @@ client.on("message_create", async (msg) => {
     }
 
     // ─── AI REPLY ─────────────────────────────────────────────────────────────
+    // Enabled chats විතරක් API වලට යනවා
     const isEnabled = isGroup ? enabledGroupChats.has(chatId) : enabledPrivateChats.has(chatId);
     if (!isEnabled) return;
 
-    // Group වලදී @ mention හෝ bot reply විතරක් respond කරයි
+    // Group වලදී @ mention හෝ bot reply විතරක්
     if (isGroup) {
-      const botNumber  = client.info.wid._serialized;
+      const botNumber    = client.info.wid._serialized;
       const isMentioned  = msg.mentionedIds?.includes(botNumber);
       const isReplyToBot = msg.hasQuotedMsg && (await msg.getQuotedMessage())?.fromMe;
       if (!isMentioned && !isReplyToBot) return;
