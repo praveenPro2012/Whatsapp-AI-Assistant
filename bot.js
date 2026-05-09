@@ -48,12 +48,12 @@ const groq = new OpenAI({
 });
 
 const deepseek = new OpenAI({
-  baseURL: "https://api.deepseek.com",
+  baseURL: "https://api.deepseek.com/v1",
   apiKey: DEEPSEEK_API_KEY,
 });
 
 const GROQ_MODEL     = "llama-3.3-70b-versatile";
-const DEEPSEEK_MODEL = "deepseek-chat";
+const DEEPSEEK_MODEL = "deepseek-v4-flash";
 
 const enabledPrivateChats = new Set();
 const enabledGroupChats   = new Set();
@@ -87,34 +87,34 @@ async function getAIReply(chatId, userMessage) {
 
   let reply;
 
-  // ── Primary: DeepSeek ──────────────────────────────────────────────────────
+  // ── Primary: Groq ──────────────────────────────────────────────────────────
   try {
-    const response = await deepseek.chat.completions.create({
-      model: DEEPSEEK_MODEL,
+    const response = await groq.chat.completions.create({
+      model: GROQ_MODEL,
       messages,
       max_tokens: 1024,
     });
     reply = response.choices[0].message.content;
-    console.log("✅ DeepSeek reply");
-  } catch (dsErr) {
-    if (!isRateLimitError(dsErr)) {
-      console.error("❌ DeepSeek error:", dsErr.message);
-      throw dsErr;
+    console.log("✅ Groq reply");
+  } catch (groqErr) {
+    if (!isRateLimitError(groqErr)) {
+      console.error("❌ Groq error:", groqErr.message);
+      throw groqErr;
     }
 
-    // ── Fallback: Groq ─────────────────────────────────────────────────────
-    console.warn("⚠️ DeepSeek rate limit - trying Groq...");
+    // ── Fallback: DeepSeek ─────────────────────────────────────────────────
+    console.warn("⚠️ Groq rate limit - trying DeepSeek...");
     try {
-      const groqResponse = await groq.chat.completions.create({
-        model: GROQ_MODEL,
+      const dsResponse = await deepseek.chat.completions.create({
+        model: DEEPSEEK_MODEL,
         messages,
         max_tokens: 1024,
       });
-      reply = groqResponse.choices[0].message.content;
-      console.log("✅ Groq fallback reply");
-    } catch (groqErr) {
-      console.error("❌ Groq error:", groqErr.message);
-      throw new Error("දෙකම fail වුණා: " + groqErr.message);
+      reply = dsResponse.choices[0].message.content;
+      console.log("✅ DeepSeek fallback reply");
+    } catch (dsErr) {
+      console.error("❌ DeepSeek error:", dsErr.message);
+      throw new Error("දෙකම fail වුණා: " + dsErr.message);
     }
   }
 
@@ -150,7 +150,7 @@ client.on("qr", async () => {
 client.on("ready", () => {
   console.log("✅ Bot active! Sachintha Lakshan's AI Assistant ready.");
   console.log(`👤 Owner: ${OWNER_NUMBER}`);
-  console.log(`🤖 Primary: ${DEEPSEEK_MODEL} | Fallback: ${GROQ_MODEL}`);
+  console.log(`🤖 Primary: ${GROQ_MODEL} | Fallback: ${DEEPSEEK_MODEL}`);
   console.log(`🌐 Default language: ${currentLanguage}`);
   console.log("📌 Default: සියලු chats disabled. /allow හෝ /allowgroup use කරන්න.\n");
 });
@@ -232,8 +232,8 @@ client.on("message_create", async (msg) => {
         const langLabel = currentLanguage === "sinhala" ? "🇱🇰 සිංහල" : "🇬🇧 English";
         const status =
           `*🤖 Bot Status*\n\n` +
-          `🟡 Primary: ${DEEPSEEK_MODEL}\n` +
-          `🟠 Fallback: ${GROQ_MODEL}\n` +
+          `🟡 Primary: ${GROQ_MODEL}\n` +
+          `🟠 Fallback: ${DEEPSEEK_MODEL}\n` +
           `🌐 Language: ${langLabel}\n\n` +
           `✅ Private chats enabled: ${enabledPrivateChats.size}\n` +
           `✅ Groups enabled: ${enabledGroupChats.size}\n\n` +
