@@ -24,7 +24,7 @@ const deepseek = new OpenAI({
 });
 
 const GROQ_MODEL     = "llama-3.3-70b-versatile";
-const DEEPSEEK_MODEL = "deepseek-chat";
+const DEEPSEEK_MODEL = "deepseek-v4-flash";
 
 const enabledPrivateChats = new Set();
 const enabledGroupChats   = new Set();
