@@ -5,19 +5,42 @@ const OpenAI = require("openai");
 const GROQ_API_KEY     = "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";
 const DEEPSEEK_API_KEY = "sk-65ade0ea4be943acaf4531f8169b14e9";
 const OWNER_NUMBER     = "94785222067";
+// ──────────────────────────────────────────────────────────────────────────────
 
-const BOT_PERSONA = `ඔයා සචින්ත ලක්ෂාන්ගේ AI assistant කෙනෙක්. සචින්ත ලක්ෂාන් unavailable වෙලාවට ඔයා ඔහු වෙනුවෙන් Massage කරනවා.
+// ─── LANGUAGE STATE ───────────────────────────────────────────────────────────
+let currentLanguage = "sinhala";
 
-LANGUAGE RULE (ඉතාම වැදගත්):
-- ඕනෑම user කෙනෙක් ඕනෑම භාෂාවකින් message කළත් (English, Sinhala, Singlish) සැමවිටම සිංහලෙන් reply කරන්න.
-- Exception එකක් නෑ — reply language සැමවිටම සිංහල.
+function getBotPersona() {
+  if (currentLanguage === "sinhala") {
+    return `ඔයා සචින්ත ලක්ෂාන් වෙනුවෙන් WhatsApp chat handle කරනවා. ඔහු unavailable වෙලාවට ඔයා reply කරනවා.
 
-IDENTITY RULE (ඉතාම වැදගත්):
-- ඔයා AI assistant කෙනෙක් කියල හෝ bot කෙනෙක් කියල කිසිවිටෙකත් ස්වේච්ඡාවෙන් reveal කරන්න එපා.
-- User කෙනෙක් සෘජුවම "ඔයා AI කෙනෙක්ද?", "ඔයා bot කෙනෙක්ද?", "ඔයා මනුස්සයෙක්ද?" වගේ දෙයක් ඇහුවොත් විතරක් "මම සචින්ත ලක්ෂාන්ගේ AI assistant" කියල කියන්න.
-- අනිත් සියලු අවස්ථාවල සාමාන්‍යයෙන් සහ ස්වාභාවිකව කතා කරන්න.
+LANGUAGE RULE:
+- User ඕනෑම භාෂාවකින් message කළත් සැමවිටම සිංහලෙන් reply කරන්න. Exception නෑ.
 
-Friendly, helpful සහ natural ලෙස සිංහලෙන් reply කරන්න.`;
+IDENTITY RULE:
+- ඔයා AI කෙනෙක් කියල, bot කෙනෙක් කියල හෝ assistant කෙනෙක් කියල කිසිම වෙලාවක ස්වේච්ඡාවෙන් කියන්න එපා.
+- "ඔයා AI ද?", "ඔයා bot ද?", "ඔයා මනුස්සයෙක් ද?" වගේ දෙයක් සෘජුවම ඇහුවොත් විතරක් කෙටියෙන් "ඔව්,මම සචින්ත ලක්ෂාන්ගේ AI assistant කෙනෙක්" කියල කියන්න. ඊට වඩා elaborate කරන්න එපා, repeat කරන්නත් එපා.
+- හැම reply එකේම "මම සචින්ත ලක්ෂාන්ගේ AI assistant" කියල tag කරන්න එපා — ඒක irritating.
+
+TONE:
+- Short, natural, casual ලෙස කතා කරන්න. Long formal replies දෙන්න එපා.
+- Friendly friend කෙනෙක් වගේ reply කරන්න.`;
+  } else {
+    return `You handle WhatsApp on behalf of Sachintha Lakshan when he's unavailable.
+
+LANGUAGE RULE:
+- Always reply in English regardless of what language the user writes in. No exceptions.
+
+IDENTITY RULE:
+- Never volunteer that you're an AI, bot, or assistant.
+- Only if directly asked ("Are you AI?", "Are you a bot?", "Are you human?") — briefly say "Yeah, I'm an Sachintha Lakshan's AI assistant." Don't elaborate or repeat it.
+- Don't tag every reply with "I'm Sachintha Lakshan's AI assistant" — that's annoying.
+
+TONE:
+- Keep replies short, natural and casual. Avoid long formal responses.
+- Talk like a friendly person, not a customer service bot.`;
+  }
+}
 // ──────────────────────────────────────────────────────────────────────────────
 
 const groq = new OpenAI({
@@ -61,7 +84,7 @@ async function getAIReply(chatId, userMessage) {
   history.push({ role: "user", content: userMessage });
   if (history.length > 20) history.splice(0, history.length - 20);
 
-  const messages = [{ role: "system", content: BOT_PERSONA }, ...history];
+  const messages = [{ role: "system", content: getBotPersona() }, ...history];
 
   let reply;
 
@@ -127,6 +150,7 @@ client.on("ready", () => {
   console.log("✅ Bot active! Sachintha Lakshan's AI Assistant ready.");
   console.log(`👤 Owner: ${OWNER_NUMBER}`);
   console.log(`🤖 Primary: ${GROQ_MODEL} | Fallback: ${DEEPSEEK_MODEL}`);
+  console.log(`🌐 Default language: ${currentLanguage}`);
   console.log("📌 Default: සියලු chats disabled. /allow හෝ /allowgroup use කරන්න.\n");
 });
 
@@ -137,7 +161,6 @@ client.on("message_create", async (msg) => {
 
     const isCommand = text.startsWith("/");
 
-    // Bot එකේම AI replies ignore කරනවා, commands pass කරනවා
     if (msg.fromMe && !isCommand) return;
 
     const chat     = await msg.getChat();
@@ -148,6 +171,20 @@ client.on("message_create", async (msg) => {
     // ─── COMMANDS ─────────────────────────────────────────────────────────────
     if (isCommand) {
       const command = text.split(" ")[0].toLowerCase();
+
+      if (command === "/sinhala") {
+        if (!isOwner(senderId)) return;
+        currentLanguage = "sinhala";
+        await msg.reply("🇱🇰 සියලුම chats සඳහා reply language සිංහල ලෙස set කරා.");
+        return;
+      }
+
+      if (command === "/english") {
+        if (!isOwner(senderId)) return;
+        currentLanguage = "english";
+        await msg.reply("🇬🇧 Reply language set to English for all chats.");
+        return;
+      }
 
       if (command === "/allowgroup") {
         if (!isOwner(senderId)) return;
@@ -191,10 +228,12 @@ client.on("message_create", async (msg) => {
 
       if (command === "/status") {
         if (!isOwner(senderId)) return;
+        const langLabel = currentLanguage === "sinhala" ? "🇱🇰 සිංහල" : "🇬🇧 English";
         const status =
           `*🤖 Bot Status*\n\n` +
           `🟡 Primary: ${GROQ_MODEL}\n` +
-          `🟠 Fallback: ${DEEPSEEK_MODEL}\n\n` +
+          `🟠 Fallback: ${DEEPSEEK_MODEL}\n` +
+          `🌐 Language: ${langLabel}\n\n` +
           `✅ Private chats enabled: ${enabledPrivateChats.size}\n` +
           `✅ Groups enabled: ${enabledGroupChats.size}\n\n` +
           `*Enabled Private Chats:*\n${enabledPrivateChats.size > 0 ? [...enabledPrivateChats].join("\n") : "කිසිවක් නෑ"}\n\n` +
@@ -213,6 +252,9 @@ client.on("message_create", async (msg) => {
           `*Group Chat:*\n` +
           `/allowgroup - මේ group enable\n` +
           `/denygroup - මේ group disable\n\n` +
+          `*Language:*\n` +
+          `/sinhala - සියලු chats සිංහලෙන් reply\n` +
+          `/english - සියලු chats English වලින් reply\n\n` +
           `*General:*\n` +
           `/reset - Conversation history clear\n` +
           `/status - Bot status\n` +
