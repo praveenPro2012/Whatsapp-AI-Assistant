@@ -1,0 +1,14 @@
+{
+  "name": "whatsapp-deepseek-bot",
+  "version": "1.0.0",
+  "description": "Sachintha Lakshan's WhatsApp AI Bot powered by DeepSeek",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.23.0",
+    "qrcode-terminal": "^0.12.0",
+    "openai": "^4.28.0"
+  }
+}
