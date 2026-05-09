@@ -3,7 +3,7 @@ const OpenAI = require("openai");
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const GROQ_API_KEY_1   = "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";
-const GROQ_API_KEY_2   = "YOUR_SECOND_GROQ_API_KEY_HERE"; // ← 2nd Groq key මෙතන දාන්න
+const GROQ_API_KEY_2   = "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"; // ← 2nd Groq key මෙතන දාන්න
 const OWNER_NUMBER     = "94785222067";
 // ──────────────────────────────────────────────────────────────────────────────
 
