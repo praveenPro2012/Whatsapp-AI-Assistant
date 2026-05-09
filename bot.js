@@ -125,7 +125,9 @@ async function getAIReply(chatId, userMessage) {
 
 // ─── WHATSAPP CLIENT ──────────────────────────────────────────────────────────
 const client = new Client({
-  authStrategy: new LocalAuth(),
+  authStrategy: new LocalAuth({
+    dataPath: "/kaggle/working/.wwebjs_auth" // ← session මෙතන save වෙනවා
+  }),
   puppeteer: {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   },
