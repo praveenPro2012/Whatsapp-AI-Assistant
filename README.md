@@ -64,4 +64,4 @@ whatsapp-deepseek-bot/
 └── README.md
 ```
 ---
-Developed by Sachintha Lakshan
+𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗱 𝗯𝘆 𝚂𝚊𝚌𝚑𝚒𝚗𝚝𝚑𝚊 𝙻𝚊𝚔𝚜𝚑𝚊𝚗
