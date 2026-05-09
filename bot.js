@@ -2,9 +2,9 @@ const { Client, LocalAuth } = require("whatsapp-web.js");
 const OpenAI = require("openai");
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-const GEMINI_API_KEY  = "AIzaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // ← Gemini API key
-const GROQ_API_KEY    = "gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // ← Groq API key
-const OWNER_NUMBER    = "94xxxxxxxxx"; // ← ඔයාගේ number (country code සහිතව, + නැතුව)
+const GEMINI_API_KEY  = "AIzaSyB4n7wg1stQX4EZqY6k0q0RTPTho_pFnNU"; // ← Gemini API key
+const GROQ_API_KEY    = "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"; // ← Groq API key
+const OWNER_NUMBER    = "94785222067"; // ← ඔයාගේ number (country code සහිතව, + නැතුව)
 
 const BOT_PERSONA = `You are a helpful AI assistant representing Sachintha Lakshan.
 You speak on behalf of Sachintha Lakshan when he is unavailable.
