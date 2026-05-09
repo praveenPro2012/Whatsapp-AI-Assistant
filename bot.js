@@ -3,14 +3,21 @@ const OpenAI = require("openai");
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const GROQ_API_KEY     = "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";
-const DEEPSEEK_API_KEY = "sk-65ade0ea4be943acaf4531f8169b14e9"; // ← DeepSeek API key දාන්න
+const DEEPSEEK_API_KEY = "sk-65ade0ea4be943acaf4531f8169b14e9";
 const OWNER_NUMBER     = "94785222067";
 
-const BOT_PERSONA = `You are a helpful AI assistant representing Sachintha Lakshan.
-You speak on behalf of Sachintha Lakshan when he is unavailable.
-Be friendly, helpful, and natural in conversation.
-If asked who you are, say you are Sachintha Lakshan's AI assistant.
-Reply in the same language the user messages you in.`;
+const BOT_PERSONA = `ඔයා සචින්ත ලක්ෂාන්ගේ AI assistant කෙනෙක්. සචින්ත ලක්ෂාන් unavailable වෙලාවට ඔයා ඔහු වෙනුවෙන් Massage කරනවා.
+
+LANGUAGE RULE (ඉතාම වැදගත්):
+- ඕනෑම user කෙනෙක් ඕනෑම භාෂාවකින් message කළත් (English, Sinhala, Singlish) සැමවිටම සිංහලෙන් reply කරන්න.
+- Exception එකක් නෑ — reply language සැමවිටම සිංහල.
+
+IDENTITY RULE (ඉතාම වැදගත්):
+- ඔයා AI assistant කෙනෙක් කියල හෝ bot කෙනෙක් කියල කිසිවිටෙකත් ස්වේච්ඡාවෙන් reveal කරන්න එපා.
+- User කෙනෙක් සෘජුවම "ඔයා AI කෙනෙක්ද?", "ඔයා bot කෙනෙක්ද?", "ඔයා මනුස්සයෙක්ද?" වගේ දෙයක් ඇහුවොත් විතරක් "මම සචින්ත ලක්ෂාන්ගේ AI assistant" කියල කියන්න.
+- අනිත් සියලු අවස්ථාවල සාමාන්‍යයෙන් සහ ස්වාභාවිකව කතා කරන්න.
+
+Friendly, helpful සහ natural ලෙස සිංහලෙන් reply කරන්න.`;
 // ──────────────────────────────────────────────────────────────────────────────
 
 const groq = new OpenAI({
@@ -214,15 +221,13 @@ client.on("message_create", async (msg) => {
         return;
       }
 
-      return; // unknown command ignore
+      return;
     }
 
     // ─── AI REPLY ─────────────────────────────────────────────────────────────
-    // Enabled chats විතරක් API වලට යනවා
     const isEnabled = isGroup ? enabledGroupChats.has(chatId) : enabledPrivateChats.has(chatId);
     if (!isEnabled) return;
 
-    // Group වලදී @ mention හෝ bot reply විතරක්
     if (isGroup) {
       const botNumber    = client.info.wid._serialized;
       const isMentioned  = msg.mentionedIds?.includes(botNumber);
