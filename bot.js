@@ -52,7 +52,7 @@ const deepseek = new OpenAI({
   apiKey: DEEPSEEK_API_KEY,
 });
 
-const GROQ_MODEL     = "llama-3.3-70b-versatile";
+const GROQ_MODEL     = "groq/compound-mini";
 const DEEPSEEK_MODEL = "deepseek-v4-flash";
 
 const enabledPrivateChats = new Set();
