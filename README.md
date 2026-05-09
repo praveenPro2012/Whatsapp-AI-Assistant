@@ -7,8 +7,8 @@ WhatsApp bot powered by Gemini & Groq AI.
 ## ⚙️ Setup (bot.js ඇතුළේ)
 
 ```js
-const Gemini_API_KEY = "sk-xxx..."; // Gemini API key
-const Groq_API_KEY = "sk-xxx..."; // Groq API key
+const GEMINI_API_KEY = "sk-xxx..."; // Gemini API key
+const GROQ_API_KEY = "sk-xxx..."; // Groq API key
 const OWNER_NUMBER = "94xxxxxxxxx";   // ඔයාගේ number (+ නැතුව)
 ```
 
