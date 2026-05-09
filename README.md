@@ -63,5 +63,5 @@ whatsapp-deepseek-bot/
 ├── setup.sh        # Kaggle setup
 └── README.md
 ```
-
+---
 Developed by Sachintha Lakshan
