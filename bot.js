@@ -127,7 +127,7 @@ client.on("ready", () => {
   console.log("📌 Default: සියලු chats disabled. /allow හෝ /allowgroup use කරන්න.\n");
 });
 
-client.on("message", async (msg) => {
+client.on("message_create", async (msg) => {
   try {
     const chat     = await msg.getChat();
     const senderId = msg.from;
