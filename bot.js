@@ -25,7 +25,7 @@ const groq = new OpenAI({
   apiKey: GROQ_API_KEY,
 });
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash";
 const GROQ_MODEL   = "llama-3.3-70b-versatile"; // Sinhala support ඇති model
 
 // enabled chats store කරන්නේ Set දෙකක් - private සහ group වෙනම
