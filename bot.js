@@ -8,7 +8,7 @@ const OWNER_NUMBER     = "94785222067";
 // ──────────────────────────────────────────────────────────────────────────────
 
 // ─── LANGUAGE STATE ───────────────────────────────────────────────────────────
-let currentLanguage = "sinhala";
+let currentLanguage = "english";
 
 function getBotPersona() {
   if (currentLanguage === "sinhala") {
