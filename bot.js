@@ -7,9 +7,8 @@ const GROQ_API_KEY_2   = "gsk_lLGJZNRVW5tEkE9UqVDWWGdyb3FYAVdSXzvESCzBLAeGVO30kH
 const OWNER_NUMBER     = "94764526054";
 // ──────────────────────────────────────────────────────────────────────────────
 
-// ─── LANGUAGE STATE ───────────────────────────────────────────────────────────
 let currentLanguage = "english";
-let allowAllPrivate = false; // ✅ සියලු private chats enable flag
+let allowAllPrivate = false;
 
 function getBotPersona() {
   if (currentLanguage === "sinhala") {
@@ -40,7 +39,6 @@ TONE:
 Please reply in English in a friendly, helpful, and natural manner.`;
   }
 }
-// ──────────────────────────────────────────────────────────────────────────────
 
 const groq1 = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
@@ -79,7 +77,7 @@ async function getAIReply(chatId, userMessage) {
   const history = getChatHistory(chatId);
 
   history.push({ role: "user", content: userMessage });
-  if (history.length > 0) history.splice(0, history.length - 0); // ← history limit: 0 (disable කරන්න 0, enable කරන්න 20 වගේ number දාන්න)
+  if (history.length > 20) history.splice(0, history.length - 20);
 
   const messages = [{ role: "system", content: getBotPersona() }, ...history];
 
@@ -123,24 +121,39 @@ const client = new Client({
   authStrategy: new LocalAuth({
     dataPath: "/kaggle/working/.wwebjs_auth"
   }),
+  webVersionCache: {
+    type: "remote",
+    remotePath: "https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html",
+  },
   puppeteer: {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   },
 });
 
+// ─── QR / PAIRING CODE ────────────────────────────────────────────────────────
 client.on("qr", async () => {
-  try {
-    await new Promise(resolve => setTimeout(resolve, 5000)); // ← 5s delay
-    const pairingCode = await client.requestPairingCode(OWNER_NUMBER);
-    console.log("\n📱 WhatsApp Pairing Code:");
-    console.log(`\n👉  ${pairingCode}\n`);
-    console.log("Steps:");
-    console.log("  1. WhatsApp open කරන්න");
-    console.log("  2. Settings → Linked Devices → Link a Device");
-    console.log("  3. 'Link with phone number' tap කරන්න");
-    console.log(`  4. Code දාන්න: ${pairingCode}\n`);
-  } catch (err) {
-    console.error("❌ Pairing code error:", err.message);
+  let attempts = 0;
+  while (attempts < 5) {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      const pairingCode = await client.requestPairingCode(OWNER_NUMBER);
+      console.log("\n📱 WhatsApp Pairing Code:");
+      console.log(`\n👉  ${pairingCode}\n`);
+      console.log("Steps:");
+      console.log("  1. WhatsApp open කරන්න");
+      console.log("  2. Settings → Linked Devices → Link a Device");
+      console.log("  3. 'Link with phone number' tap කරන්න");
+      console.log(`  4. Code දාන්න: ${pairingCode}\n`);
+      break;
+    } catch (err) {
+      attempts++;
+      console.error(`❌ Pairing code error (attempt ${attempts}/5):`, err.message);
+      if (attempts >= 5) {
+        console.error("❌ Max attempts reached. Restarting...");
+        process.exit(1);
+      }
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
   }
 });
 
@@ -158,18 +171,15 @@ client.on("message_create", async (msg) => {
     if (!text) return;
 
     const isCommand = text.startsWith("/");
-
     if (msg.fromMe && !isCommand) return;
 
     const chat   = await msg.getChat();
     const chatId = chat.id._serialized;
 
-    // ✅ Groups සම්පූර්ණයෙන්ම ignore
     if (chat.isGroup) return;
 
     const senderId = msg.from;
 
-    // ─── COMMANDS ─────────────────────────────────────────────────────────────
     if (isCommand) {
       const command = text.split(" ")[0].toLowerCase();
 
@@ -179,37 +189,30 @@ client.on("message_create", async (msg) => {
         await msg.reply("🇱🇰 සියලුම chats සඳහා reply language සිංහල ලෙස set කරා.");
         return;
       }
-
       if (command === "/english") {
         if (!isOwner(senderId)) return;
         currentLanguage = "english";
         await msg.reply("🇬🇧 Reply language set to English for all chats.");
         return;
       }
-
       if (command === "/allow") {
         if (!isOwner(senderId)) return;
         enabledPrivateChats.add(chatId);
         await msg.reply("✅ මේ private chat එකේදී bot enable කරා.");
         return;
       }
-
       if (command === "/deny") {
         if (!isOwner(senderId)) return;
         enabledPrivateChats.delete(chatId);
         await msg.reply("❌ මේ private chat එකේදී bot disable කරා.");
         return;
       }
-
-      // ✅ නව command - සියලු private chats එකවර enable
       if (command === "/allowall") {
         if (!isOwner(senderId)) return;
         allowAllPrivate = true;
         await msg.reply("✅ සියලු private chats bot enable කරා.");
         return;
       }
-
-      // ✅ නව command - සියලු private chats එකවර disable
       if (command === "/denyall") {
         if (!isOwner(senderId)) return;
         allowAllPrivate = false;
@@ -217,7 +220,6 @@ client.on("message_create", async (msg) => {
         await msg.reply("❌ සියලු private chats bot disable කරා.");
         return;
       }
-
       if (command === "/reset") {
         const isEnabled = allowAllPrivate || enabledPrivateChats.has(chatId);
         if (!isEnabled && !isOwner(senderId)) return;
@@ -225,7 +227,6 @@ client.on("message_create", async (msg) => {
         await msg.reply("🔄 Conversation history clear කරා.");
         return;
       }
-
       if (command === "/status") {
         if (!isOwner(senderId)) return;
         const langLabel = currentLanguage === "sinhala" ? "🇱🇰 සිංහල" : "🇬🇧 English";
@@ -240,36 +241,29 @@ client.on("message_create", async (msg) => {
         await msg.reply(status);
         return;
       }
-
       if (command === "/help") {
         if (!isOwner(senderId)) return;
         const help =
           `*🤖 Sachintha Lakshan's Bot - Commands*\n\n` +
-          `*Private Chat:*\n` +
           `/allow - මේ chat enable\n` +
           `/deny - මේ chat disable\n` +
           `/allowall - සියලු private chats enable\n` +
           `/denyall - සියලු private chats disable\n\n` +
-          `*Language:*\n` +
-          `/sinhala - සියලු chats සිංහලෙන් reply\n` +
-          `/english - සියලු chats English වලින් reply\n\n` +
-          `*General:*\n` +
+          `/sinhala - සිංහලෙන් reply\n` +
+          `/english - English වලින් reply\n\n` +
           `/reset - Conversation history clear\n` +
           `/status - Bot status\n` +
           `/help - Command list`;
         await msg.reply(help);
         return;
       }
-
       return;
     }
 
-    // ─── AI REPLY ─────────────────────────────────────────────────────────────
     const isEnabled = allowAllPrivate || enabledPrivateChats.has(chatId);
     if (!isEnabled) return;
 
     await chat.sendStateTyping();
-
     const reply = await getAIReply(chatId, text);
     await msg.reply(reply);
 
