@@ -79,7 +79,7 @@ async function getAIReply(chatId, userMessage) {
   const history = getChatHistory(chatId);
 
   history.push({ role: "user", content: userMessage });
-  if (history.length > 20) history.splice(0, history.length - 20);
+  if (history.length > 0) history.splice(0, history.length - 0); // ← history limit: 0 (disable කරන්න 0, enable කරන්න 20 වගේ number දාන්න)
 
   const messages = [{ role: "system", content: getBotPersona() }, ...history];
 
