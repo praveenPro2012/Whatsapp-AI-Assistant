@@ -130,6 +130,7 @@ const client = new Client({
 
 client.on("qr", async () => {
   try {
+    await new Promise(resolve => setTimeout(resolve, 5000)); // ← 5s delay
     const pairingCode = await client.requestPairingCode(OWNER_NUMBER);
     console.log("\n📱 WhatsApp Pairing Code:");
     console.log(`\n👉  ${pairingCode}\n`);
