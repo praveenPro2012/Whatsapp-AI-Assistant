@@ -9,6 +9,7 @@ const OWNER_NUMBER     = "94785222067";
 
 // ─── LANGUAGE STATE ───────────────────────────────────────────────────────────
 let currentLanguage = "english";
+let allowAllPrivate = false; // ✅ සියලු private chats enable flag
 
 function getBotPersona() {
   if (currentLanguage === "sinhala") {
@@ -21,10 +22,9 @@ IDENTITY RULE:
 - ඔයා AI කෙනෙක් කියල, bot කෙනෙක් කියල හෝ assistant කෙනෙක් කියල කිසිම වෙලාවක ස්වේච්ඡාවෙන් කියන්න එපා.
 - "ඔයා AI ද?", "ඔයා bot ද?", "ඔයා මනුස්සයෙක් ද?" වගේ දෙයක් සෘජුවම ඇහුවොත් විතරක් කෙටියෙන් "ඔව්,මම සචින්ත ලක්ෂාන්ගේ AI assistant කෙනෙක්" කියල කියන්න. ඊට වඩා elaborate කරන්න එපා, repeat කරන්නත් එපා.
 - අනිත් සියලු අවස්ථාවල සාමාන්‍යයෙන් සහ ස්වාභාවිකව කතා කරන්න.
-Friendly, helpful සහ natural ලෙස සිංහලෙන් reply කරන්න.
 
 TONE:
--Friendly, helpful සහ natural ලෙස සිංහලෙන් reply කරන්න.`;
+- Friendly, helpful සහ natural ලෙස සිංහලෙන් reply කරන්න.`;
   } else {
     return `You handle WhatsApp on behalf of Sachintha Lakshan when he's unavailable.
 
@@ -33,8 +33,8 @@ LANGUAGE RULE:
 
 IDENTITY RULE:
 - Never volunteer that you're an AI, bot, or assistant.
-- Only if directly asked ("Are you AI?", "Are you a bot?", "Are you human?") — briefly say "Yeah, I'm an Sachintha Lakshan's AI assistant." Don't elaborate or repeat it.
-- In all other cases, speak normally and naturally. Reply in English in a friendly, helpful and natural manner.
+- Only if directly asked ("Are you AI?", "Are you a bot?", "Are you human?") — briefly say "Yeah, I'm Sachintha Lakshan's AI assistant." Don't elaborate or repeat it.
+- In all other cases, speak normally and naturally.
 
 TONE:
 Please reply in English in a friendly, helpful, and natural manner.`;
@@ -55,7 +55,6 @@ const groq2 = new OpenAI({
 const GROQ_MODEL = "compound-beta-mini";
 
 const enabledPrivateChats = new Set();
-const enabledGroupChats   = new Set();
 const chatHistories = {};
 
 function isOwner(senderId) {
@@ -86,7 +85,6 @@ async function getAIReply(chatId, userMessage) {
 
   let reply;
 
-  // ── Primary: Groq Key 1 ────────────────────────────────────────────────────
   try {
     const response = await groq1.chat.completions.create({
       model: GROQ_MODEL,
@@ -101,7 +99,6 @@ async function getAIReply(chatId, userMessage) {
       throw groqErr1;
     }
 
-    // ── Fallback: Groq Key 2 ───────────────────────────────────────────────
     console.warn("⚠️ Groq Key 1 rate limit - trying Groq Key 2...");
     try {
       const response2 = await groq2.chat.completions.create({
@@ -151,7 +148,7 @@ client.on("ready", () => {
   console.log(`👤 Owner: ${OWNER_NUMBER}`);
   console.log(`🤖 Model: ${GROQ_MODEL} (Key 1 → Key 2 fallback)`);
   console.log(`🌐 Default language: ${currentLanguage}`);
-  console.log("📌 Default: සියලු chats disabled. /allow හෝ /allowgroup use කරන්න.\n");
+  console.log("📌 Default: සියලු chats disabled. /allow හෝ /allowall use කරන්න.\n");
 });
 
 client.on("message_create", async (msg) => {
@@ -163,12 +160,13 @@ client.on("message_create", async (msg) => {
 
     if (msg.fromMe && !isCommand) return;
 
-    const chat     = await msg.getChat();
-    const chatId   = chat.id._serialized;
-    const isGroup  = chat.isGroup;
+    const chat   = await msg.getChat();
+    const chatId = chat.id._serialized;
 
-    // ✅ FIX: Group වලදී msg.author, private chat වලදී msg.from
-    const senderId = isGroup ? msg.author : msg.from;
+    // ✅ Groups සම්පූර්ණයෙන්ම ignore
+    if (chat.isGroup) return;
+
+    const senderId = msg.from;
 
     // ─── COMMANDS ─────────────────────────────────────────────────────────────
     if (isCommand) {
@@ -188,25 +186,8 @@ client.on("message_create", async (msg) => {
         return;
       }
 
-      if (command === "/allowgroup") {
-        if (!isOwner(senderId)) return;
-        if (!isGroup) { await msg.reply("⚠️ මේ command group chat එකක් ඇතුළේ use කරන්න."); return; }
-        enabledGroupChats.add(chatId);
-        await msg.reply(`✅ *${chat.name}* group එකේදී bot enable කරා.`);
-        return;
-      }
-
-      if (command === "/denygroup") {
-        if (!isOwner(senderId)) return;
-        if (!isGroup) { await msg.reply("⚠️ මේ command group chat එකක් ඇතුළේ use කරන්න."); return; }
-        enabledGroupChats.delete(chatId);
-        await msg.reply(`❌ *${chat.name}* group එකේදී bot disable කරා.`);
-        return;
-      }
-
       if (command === "/allow") {
         if (!isOwner(senderId)) return;
-        if (isGroup) { await msg.reply("⚠️ මේ command private chat එකක් ඇතුළේ use කරන්න."); return; }
         enabledPrivateChats.add(chatId);
         await msg.reply("✅ මේ private chat එකේදී bot enable කරා.");
         return;
@@ -214,14 +195,30 @@ client.on("message_create", async (msg) => {
 
       if (command === "/deny") {
         if (!isOwner(senderId)) return;
-        if (isGroup) { await msg.reply("⚠️ මේ command private chat එකක් ඇතුළේ use කරන්න."); return; }
         enabledPrivateChats.delete(chatId);
         await msg.reply("❌ මේ private chat එකේදී bot disable කරා.");
         return;
       }
 
+      // ✅ නව command - සියලු private chats එකවර enable
+      if (command === "/allowall") {
+        if (!isOwner(senderId)) return;
+        allowAllPrivate = true;
+        await msg.reply("✅ සියලු private chats bot enable කරා.");
+        return;
+      }
+
+      // ✅ නව command - සියලු private chats එකවර disable
+      if (command === "/denyall") {
+        if (!isOwner(senderId)) return;
+        allowAllPrivate = false;
+        enabledPrivateChats.clear();
+        await msg.reply("❌ සියලු private chats bot disable කරා.");
+        return;
+      }
+
       if (command === "/reset") {
-        const isEnabled = isGroup ? enabledGroupChats.has(chatId) : enabledPrivateChats.has(chatId);
+        const isEnabled = allowAllPrivate || enabledPrivateChats.has(chatId);
         if (!isEnabled && !isOwner(senderId)) return;
         chatHistories[chatId] = [];
         await msg.reply("🔄 Conversation history clear කරා.");
@@ -236,10 +233,9 @@ client.on("message_create", async (msg) => {
           `🟡 Model: ${GROQ_MODEL}\n` +
           `🔑 Key 1 → Key 2 fallback\n` +
           `🌐 Language: ${langLabel}\n\n` +
-          `✅ Private chats enabled: ${enabledPrivateChats.size}\n` +
-          `✅ Groups enabled: ${enabledGroupChats.size}\n\n` +
-          `*Enabled Private Chats:*\n${enabledPrivateChats.size > 0 ? [...enabledPrivateChats].join("\n") : "කිසිවක් නෑ"}\n\n` +
-          `*Enabled Groups:*\n${enabledGroupChats.size > 0 ? [...enabledGroupChats].join("\n") : "කිසිවක් නෑ"}`;
+          `🌐 Allow All: ${allowAllPrivate ? "✅ ON" : "❌ OFF"}\n` +
+          `✅ Individual chats enabled: ${enabledPrivateChats.size}\n\n` +
+          `*Enabled Chats:*\n${enabledPrivateChats.size > 0 ? [...enabledPrivateChats].join("\n") : "කිසිවක් නෑ"}`;
         await msg.reply(status);
         return;
       }
@@ -249,11 +245,10 @@ client.on("message_create", async (msg) => {
         const help =
           `*🤖 Sachintha Lakshan's Bot - Commands*\n\n` +
           `*Private Chat:*\n` +
-          `/allow - මේ private chat enable\n` +
-          `/deny - මේ private chat disable\n\n` +
-          `*Group Chat:*\n` +
-          `/allowgroup - මේ group enable\n` +
-          `/denygroup - මේ group disable\n\n` +
+          `/allow - මේ chat enable\n` +
+          `/deny - මේ chat disable\n` +
+          `/allowall - සියලු private chats enable\n` +
+          `/denyall - සියලු private chats disable\n\n` +
           `*Language:*\n` +
           `/sinhala - සියලු chats සිංහලෙන් reply\n` +
           `/english - සියලු chats English වලින් reply\n\n` +
@@ -269,15 +264,8 @@ client.on("message_create", async (msg) => {
     }
 
     // ─── AI REPLY ─────────────────────────────────────────────────────────────
-    const isEnabled = isGroup ? enabledGroupChats.has(chatId) : enabledPrivateChats.has(chatId);
+    const isEnabled = allowAllPrivate || enabledPrivateChats.has(chatId);
     if (!isEnabled) return;
-
-    if (isGroup) {
-      const botNumber    = client.info.wid._serialized;
-      const isMentioned  = msg.mentionedIds?.includes(botNumber);
-      const isReplyToBot = msg.hasQuotedMsg && (await msg.getQuotedMessage())?.fromMe;
-      if (!isMentioned && !isReplyToBot) return;
-    }
 
     await chat.sendStateTyping();
 
