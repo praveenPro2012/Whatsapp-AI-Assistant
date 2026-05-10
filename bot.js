@@ -4,12 +4,12 @@ const OpenAI = require("openai");
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const GROQ_API_KEY_1   = "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";
 const GROQ_API_KEY_2   = "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";
-const OWNER_NUMBER     = "94785222067";
+const OWNER_NUMBER     = "94764526054";
 // ──────────────────────────────────────────────────────────────────────────────
 
 // ─── LANGUAGE STATE ───────────────────────────────────────────────────────────
 let currentLanguage = "english";
-let allowAllPrivate = false;
+let allowAllPrivate = false; // ✅ සියලු private chats enable flag
 
 function getBotPersona() {
   if (currentLanguage === "sinhala") {
@@ -79,7 +79,7 @@ async function getAIReply(chatId, userMessage) {
   const history = getChatHistory(chatId);
 
   history.push({ role: "user", content: userMessage });
-  if (history.length > 20) history.splice(0, history.length - 20);
+  if (history.length > 0) history.splice(0, history.length - 0); // ← history limit: 0 (disable කරන්න 0, enable කරන්න 20 වගේ number දාන්න)
 
   const messages = [{ role: "system", content: getBotPersona() }, ...history];
 
@@ -128,30 +128,19 @@ const client = new Client({
   },
 });
 
-// ─── QR / PAIRING CODE (retry logic සහිතව) ───────────────────────────────────
 client.on("qr", async () => {
-  let attempts = 0;
-  while (attempts < 5) {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      const pairingCode = await client.requestPairingCode(OWNER_NUMBER);
-      console.log("\n📱 WhatsApp Pairing Code:");
-      console.log(`\n👉  ${pairingCode}\n`);
-      console.log("Steps:");
-      console.log("  1. WhatsApp open කරන්න");
-      console.log("  2. Settings → Linked Devices → Link a Device");
-      console.log("  3. 'Link with phone number' tap කරන්න");
-      console.log(`  4. Code දාන්න: ${pairingCode}\n`);
-      break; // ✅ Success
-    } catch (err) {
-      attempts++;
-      console.error(`❌ Pairing code error (attempt ${attempts}/5):`, err.message);
-      if (attempts >= 5) {
-        console.error("❌ Max attempts reached. Restarting...");
-        process.exit(1);
-      }
-      await new Promise(resolve => setTimeout(resolve, 5000));
-    }
+  try {
+    await new Promise(resolve => setTimeout(resolve, 5000)); // ← 5s delay
+    const pairingCode = await client.requestPairingCode(OWNER_NUMBER);
+    console.log("\n📱 WhatsApp Pairing Code:");
+    console.log(`\n👉  ${pairingCode}\n`);
+    console.log("Steps:");
+    console.log("  1. WhatsApp open කරන්න");
+    console.log("  2. Settings → Linked Devices → Link a Device");
+    console.log("  3. 'Link with phone number' tap කරන්න");
+    console.log(`  4. Code දාන්න: ${pairingCode}\n`);
+  } catch (err) {
+    console.error("❌ Pairing code error:", err.message);
   }
 });
 
@@ -175,6 +164,7 @@ client.on("message_create", async (msg) => {
     const chat   = await msg.getChat();
     const chatId = chat.id._serialized;
 
+    // ✅ Groups සම්පූර්ණයෙන්ම ignore
     if (chat.isGroup) return;
 
     const senderId = msg.from;
@@ -211,6 +201,7 @@ client.on("message_create", async (msg) => {
         return;
       }
 
+      // ✅ නව command - සියලු private chats එකවර enable
       if (command === "/allowall") {
         if (!isOwner(senderId)) return;
         allowAllPrivate = true;
@@ -218,6 +209,7 @@ client.on("message_create", async (msg) => {
         return;
       }
 
+      // ✅ නව command - සියලු private chats එකවර disable
       if (command === "/denyall") {
         if (!isOwner(senderId)) return;
         allowAllPrivate = false;
