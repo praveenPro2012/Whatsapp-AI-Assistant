@@ -3,7 +3,7 @@ const OpenAI = require("openai");
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const GROQ_API_KEY_1   = "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";
-const GROQ_API_KEY_2   = "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"; // ← 2nd Groq key මෙතන දාන්න
+const GROQ_API_KEY_2   = "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";
 const OWNER_NUMBER     = "94785222067";
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -124,7 +124,7 @@ async function getAIReply(chatId, userMessage) {
 // ─── WHATSAPP CLIENT ──────────────────────────────────────────────────────────
 const client = new Client({
   authStrategy: new LocalAuth({
-    dataPath: "/kaggle/working/.wwebjs_auth" // ← session මෙතන save වෙනවා
+    dataPath: "/kaggle/working/.wwebjs_auth"
   }),
   puppeteer: {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -164,9 +164,11 @@ client.on("message_create", async (msg) => {
     if (msg.fromMe && !isCommand) return;
 
     const chat     = await msg.getChat();
-    const senderId = msg.from;
     const chatId   = chat.id._serialized;
     const isGroup  = chat.isGroup;
+
+    // ✅ FIX: Group වලදී msg.author, private chat වලදී msg.from
+    const senderId = isGroup ? msg.author : msg.from;
 
     // ─── COMMANDS ─────────────────────────────────────────────────────────────
     if (isCommand) {
