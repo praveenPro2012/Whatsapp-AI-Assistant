@@ -24,7 +24,7 @@
 
 ## 🌟 මේක කරන්නේ මොකද?
 
-ඔබ unavailable වෙලාවට, මේ bot එක ඔබ වෙනුවෙන් WhatsApp messages handle කරනවා — **English හෝ සිංහලෙන්** ස්වාභාවිකව reply කරනවා, conversation history මතක තියාගන්නවා, සහ කෙනෙක් සෘජුවම ඇහුවොත් විතරක් AI කෙනෙක් බව කියනවා.
+ඔබ unavailable වෙලාවට, මේ bot එක ඔබ වෙනුවෙන් WhatsApp messages handle කරනවා — **English හෝ සිංහලෙන්** ස්වාභාවිකව reply කරනවා, conversation history මතක තියාගන්නවා,
 
 ---
 
