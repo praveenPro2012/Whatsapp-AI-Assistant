@@ -34,7 +34,7 @@ IDENTITY RULE:
 - In all other cases, address yourself as Sachintha Lakshan's AI assistant.
 
 TONE:
-Please reply in English in a friendly, helpful, and natural manner.`;
+Please reply in English in a helpful, and natural manner.`;
   }
 }
 
