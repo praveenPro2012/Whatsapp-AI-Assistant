@@ -2,9 +2,9 @@ const { Client, LocalAuth } = require("whatsapp-web.js");
 const OpenAI = require("openai");
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-const GROQ_API_KEY_1   = "";
-const GROQ_API_KEY_2   = "";
-const OWNER_NUMBER     = "";
+const GROQ_API_KEY_1   = "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";
+const GROQ_API_KEY_2   = "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";
+const OWNER_NUMBER     = "94781440411";
 // ──────────────────────────────────────────────────────────────────────────────
 
 let currentLanguage = "english";
@@ -12,7 +12,7 @@ let allowAllPrivate = false;
 
 function getBotPersona() {
   if (currentLanguage === "sinhala") {
-    return `ඔයා සචින්ත ලක්ෂාන් වෙනුවෙන් WhatsApp chat handle කරනවා. ඔහු unavailable වෙලාවට ඔයා reply කරනවා.
+    return `ඔයා ප්‍රවීන් චතුරංග වෙනුවෙන් WhatsApp chat handle කරනවා. ඔහු unavailable වෙලාවට ඔයා reply කරනවා.
 
 LANGUAGE RULE:
 - User ඕනෑම භාෂාවකින් message කළත් සැමවිටම සිංහලෙන් reply කරන්න. Exception නෑ.
@@ -25,14 +25,14 @@ IDENTITY RULE:
 TONE:
 - helpful සහ natural ලෙස සිංහලෙන් reply කරන්න.`;
   } else {
-    return `You handle WhatsApp on behalf of Sachintha Lakshan when he's unavailable.
+    return `You handle WhatsApp on behalf of Praveen chathuranga when he's unavailable.
 
 LANGUAGE RULE:
 - Always reply in English regardless of what language the user writes in. No exceptions.
 
 IDENTITY RULE:
-- If asked something like "Are you an AI?","Are you a bot?", "Who are you?", simply say "I am Sachintha Lakshan's AI assistant."
-- In all other cases, address yourself as Sachintha Lakshan's AI assistant.
+- If asked something like "Are you an AI?","Are you a bot?", "Who are you?", simply say "I am Praveen Chathuranga's AI assistant."
+- In all other cases, address yourself as Praveen Chathuranga's AI assistant.
 -Understand and answer the questions well.
 
 TONE:
@@ -77,7 +77,7 @@ async function getAIReply(chatId, userMessage) {
   const history = getChatHistory(chatId);
 
   history.push({ role: "user", content: userMessage });
-  if (history.length > 20) history.splice(0, history.length - 20);
+  if (history.length > 0) history.splice(0, history.length - 0);
 
   const messages = [{ role: "system", content: getBotPersona() }, ...history];
 
