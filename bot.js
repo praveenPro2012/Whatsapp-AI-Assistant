@@ -2,9 +2,9 @@ const { Client, LocalAuth } = require("whatsapp-web.js");
 const OpenAI = require("openai");
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-const GROQ_API_KEY_1   = "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";
-const GROQ_API_KEY_2   = "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";
-const OWNER_NUMBER     = "94764526054";
+const GROQ_API_KEY_1   = "";
+const GROQ_API_KEY_2   = "";
+const OWNER_NUMBER     = "";
 // ──────────────────────────────────────────────────────────────────────────────
 
 let currentLanguage = "english";
